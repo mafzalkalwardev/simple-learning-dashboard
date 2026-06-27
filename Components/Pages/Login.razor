@@ -1,0 +1,57 @@
+﻿@page "/login"
+@using SimpleLearningDashboard.Services
+@inject UserSession UserSession
+@inject SimpleLearningDashboard.Data.AppDbContext Db
+@inject NavigationManager Nav
+
+<div class="d-flex justify-content-center align-items-center" style="min-height:100vh;">
+    <div class="card p-4 shadow" style="width:400px;">
+
+        <h3 class="text-center mb-3">Login</h3>
+
+        <input class="form-control mb-2"
+               placeholder="Email"
+               @bind="email" />
+
+        <input type="password"
+               class="form-control mb-2"
+               placeholder="Password"
+               @bind="password" />
+
+        <button class="btn btn-primary w-100"
+                @onclick="DoLogin">
+            Login
+        </button>
+
+        <p class="mt-3 text-center">
+            Don’t have an account?
+            <a href="/register">Register</a>
+        </p>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-danger mt-2">@message</div>
+        }
+    </div>
+</div>
+
+@code {
+    string email = "";
+    string password = "";
+    string message = "";
+
+    void DoLogin()
+    {
+        var user = Db.Users
+            .FirstOrDefault(u => u.Email == email && u.Password == password);
+
+        if (user == null)
+        {
+            message = "Invalid email or password";
+            return;
+        }
+
+        UserSession.Email = user.Email;
+        Nav.NavigateTo("/");
+    }
+}

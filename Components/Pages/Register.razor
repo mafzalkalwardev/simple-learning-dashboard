@@ -1,0 +1,67 @@
+﻿@page "/register"
+@using SimpleLearningDashboard.Services
+@inject UserSession UserSession
+@inject SimpleLearningDashboard.Data.AppDbContext Db
+@inject NavigationManager Nav
+
+<div class="d-flex justify-content-center align-items-center" style="min-height:100vh;">
+    <div class="card p-4 shadow" style="width:400px;">
+
+        <h3 class="text-center mb-3">Register</h3>
+
+        <input class="form-control mb-2"
+               placeholder="Email"
+               @bind="email" />
+
+        <input type="password"
+               class="form-control mb-2"
+               placeholder="Password"
+               @bind="password" />
+
+        <button class="btn btn-success w-100"
+                @onclick="RegisterUser">
+            Register
+        </button>
+
+        <p class="mt-3 text-center">
+            Already have an account?
+            <a href="/login">Login</a>
+        </p>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-info mt-2">@message</div>
+        }
+    </div>
+</div>
+
+@code {
+    string email = "";
+    string password = "";
+    string message = "";
+
+    void RegisterUser()
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            message = "Email and password required";
+            return;
+        }
+
+        var exists = Db.Users.Any(u => u.Email == email);
+        if (exists)
+        {
+            message = "User already exists";
+            return;
+        }
+
+        Db.Users.Add(new Models.User
+        {
+            Email = email,
+            Password = password
+        });
+
+        Db.SaveChanges();
+        Nav.NavigateTo("/login");
+    }
+}

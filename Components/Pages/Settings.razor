@@ -1,0 +1,56 @@
+﻿@page "/settings"
+
+@using SimpleLearningDashboard.Services
+
+@inject CourseStorageService Storage
+@inject ThemeService Theme
+@inject UserSession UserSession
+
+<h3 class="mb-4">
+    <i class="bi bi-gear me-2"></i>Settings
+</h3>
+
+@if (string.IsNullOrEmpty(UserSession.Email))
+{
+    <p class="text-danger">Please log in first.</p>
+}
+else
+{
+    <div class="card shadow p-4 bg-light mb-4">
+        <h5 class="mb-3">
+            <i class="bi bi-moon-stars me-2"></i>Appearance
+        </h5>
+
+        <button class="btn btn-secondary"
+                @onclick="Theme.ToggleTheme">
+            Toggle Light / Dark Theme
+        </button>
+    </div>
+
+    <div class="card shadow p-4 bg-light">
+        <h5 class="text-danger mb-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>Danger Zone
+        </h5>
+
+        <button class="btn btn-danger"
+                @onclick="ResetProgress">
+            Reset All Progress
+        </button>
+    </div>
+}
+
+@code {
+    void ResetProgress()
+    {
+        var allCourses = Storage.Load();
+
+        foreach (var c in allCourses)
+        {
+            c.IsCompleted = false;
+            foreach (var l in c.Lessons)
+                l.Completed = false;
+        }
+
+        Storage.Save(allCourses);
+    }
+}

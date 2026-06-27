@@ -1,0 +1,36 @@
+﻿@inherits LayoutComponentBase
+@using SimpleLearningDashboard.Services
+@inject ThemeService Theme
+
+<div class="page @(Theme.IsDark ? "bg-dark text-light" : "bg-light text-dark")">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 d-flex align-items-center">
+            <!-- Dark Mode Toggle -->
+            <button class="btn btn-sm btn-outline-secondary ms-auto"
+                    @onclick="Theme.ToggleTheme">
+                @(Theme.IsDark ? "☀ Light" : "🌙 Dark")
+            </button>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.OnThemeChanged += StateHasChanged;
+    }
+}

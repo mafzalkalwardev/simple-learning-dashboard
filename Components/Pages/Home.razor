@@ -1,0 +1,99 @@
+﻿@page "/"
+
+@using SimpleLearningDashboard.Models
+@using SimpleLearningDashboard.Services
+
+@inject QuoteService QuoteService
+@inject CourseStorageService CourseService
+@inject UserSession UserSession
+@inject NavigationManager Nav
+
+<h2 class="mb-4">Learning Dashboard</h2>
+
+@if (string.IsNullOrEmpty(UserSession.Email))
+{
+    <p>Redirecting...</p>
+}
+else
+{
+    <div class="alert alert-success mb-4">
+        Welcome, <strong>@UserSession.Email</strong> 👋
+    </div>
+
+    <!-- DASHBOARD STATS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow p-3">
+                <h6><i class="bi bi-book me-2"></i>Total Courses</h6>
+                <h2>@CourseService.TotalCourses()</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow p-3">
+                <h6><i class="bi bi-check-circle me-2"></i>Completed Courses</h6>
+                <h2>@CourseService.CompletedCourses()</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow p-3">
+                <h6><i class="bi bi-graph-up-arrow me-2"></i>Progress</h6>
+                <h2>@CourseService.ProgressPercent()%</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="card shadow p-3 mb-4">
+        <h6 class="mb-2">Overall Progress</h6>
+        <div class="progress">
+            <div class="progress-bar bg-success"
+                 style="width:@CourseService.ProgressPercent()%">
+                @CourseService.ProgressPercent()%
+            </div>
+        </div>
+    </div>
+
+    <!-- QUOTE OF THE DAY -->
+    @if (quote == null)
+    {
+        <p><em>Loading quote...</em></p>
+    }
+    else
+    {
+        <div class="card shadow p-3 mb-4">
+            <h6>Quote of the Day</h6>
+            <p class="fst-italic mb-1">@quote.q</p>
+            <small>— @quote.a</small>
+        </div>
+    }
+
+    <!-- ACTIONS -->
+    <button class="btn btn-danger" @onclick="Logout">
+        Logout
+    </button>
+}
+
+@code {
+    Quote? quote;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 🔐 Redirect if NOT logged in
+        if (string.IsNullOrEmpty(UserSession.Email))
+        {
+            Nav.NavigateTo("/login", true);
+            return;
+        }
+
+        // 💬 Load quote AFTER login
+        quote = await QuoteService.GetQuoteAsync();
+    }
+
+    void Logout()
+    {
+        UserSession.Email = "";
+        Nav.NavigateTo("/login", true);
+    }
+}

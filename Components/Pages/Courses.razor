@@ -1,0 +1,245 @@
+﻿@page "/courses"
+
+@using System.Linq
+@using SimpleLearningDashboard.Models
+@using SimpleLearningDashboard.Services
+
+@inject NavigationManager Nav
+@inject CourseStorageService Storage
+@inject UserSession UserSession
+
+<h3 class="mb-4">My Courses</h3>
+
+@if (string.IsNullOrEmpty(UserSession.Email))
+{
+    <p class="text-danger">
+        Please log in to view your courses.
+    </p>
+}
+else
+{
+    <!-- ADD COURSE -->
+    <div class="mb-3 d-flex gap-2">
+        <input class="form-control"
+               placeholder="Enter course name"
+               @bind="newCourse" />
+
+        <button class="btn btn-primary" @onclick="AddCourse">
+            Add Course
+        </button>
+    </div>
+
+    <!-- COURSES LIST -->
+    @foreach (var course in courses)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-body">
+
+                <!-- HEADER -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0 fw-bold">@course.Name</h5>
+
+                    <div>
+                        @if (course.IsCompleted)
+                        {
+                            <span class="badge bg-success me-2">
+                                <i class="bi bi-check-circle me-1"></i> Completed
+                            </span>
+
+                        }
+
+                        <button class="btn btn-outline-danger btn-sm"
+                                @onclick="() => ConfirmDelete(course)">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PROGRESS -->
+                <small>Progress: @GetProgress(course)%</small>
+
+                <div class="progress mb-3" style="height: 18px;">
+                    <div class="progress-bar bg-success"
+                         style="width:@GetProgress(course)%">
+                    </div>
+                </div>
+
+                <!-- MARK COMPLETED -->
+                @if (!course.IsCompleted && GetProgress(course) == 100)
+                {
+                    <button class="btn btn-success btn-sm mb-3"
+                            @onclick="() => MarkCourseCompleted(course)">
+                        Mark Course Completed
+                    </button>
+                }
+
+                <!-- LESSON INPUT -->
+                <input class="form-control mb-2"
+                       placeholder="Enter lesson name"
+                       @bind="course.NewLesson" />
+
+                <button class="btn btn-outline-success btn-sm mb-2"
+                        @onclick="() => AddLesson(course)">
+                    Add Lesson
+                </button>
+
+                <!-- LESSON LIST -->
+                <ul class="list-group mb-2">
+                    @foreach (var lesson in course.Lessons)
+                    {
+                        <li class="list-group-item">
+                            <input type="checkbox"
+                                   class="form-check-input me-2"
+                                   @bind="lesson.Completed" />
+                            @lesson.Name
+                        </li>
+                    }
+                </ul>
+
+                <!-- ACTIONS -->
+                <div class="d-flex gap-2">
+                    <button class="btn btn-secondary btn-sm"
+                            @onclick="() => GoToDetails(course.Id)">
+                        View Details
+                    </button>
+
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="SaveAll">
+                        Save Progress
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    }
+}
+
+<!-- DELETE MODAL -->
+@if (courseToDelete != null)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                </div>
+
+                <div class="modal-body">
+                    Are you sure you want to delete
+                    <strong>@courseToDelete.Name</strong>?
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary"
+                            @onclick="CancelDelete">
+                        Cancel
+                    </button>
+
+                    <button class="btn btn-danger"
+                            @onclick="DeleteConfirmed">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    string newCourse = "";
+
+    List<Course> allCourses = new();
+    List<Course> courses = new();
+    Course? courseToDelete;
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(UserSession.Email))
+        {
+            Nav.NavigateTo("/login", true);
+            return;
+        }
+
+        allCourses = Storage.Load();
+
+        courses = allCourses
+            .Where(c => c.UserEmail == UserSession.Email)
+            .ToList();
+    }
+
+    void AddCourse()
+    {
+        if (!string.IsNullOrWhiteSpace(newCourse))
+        {
+            var course = new Course
+            {
+                Id = allCourses.Count + 1,
+                Name = newCourse,
+                UserEmail = UserSession.Email
+            };
+
+            allCourses.Add(course);
+            courses.Add(course);
+
+            newCourse = "";
+            Storage.Save(allCourses);
+        }
+    }
+
+    void AddLesson(Course course)
+    {
+        if (!string.IsNullOrWhiteSpace(course.NewLesson))
+        {
+            course.Lessons.Add(new Lesson
+            {
+                Name = course.NewLesson
+            });
+
+            course.NewLesson = "";
+            Storage.Save(allCourses);
+        }
+    }
+
+    int GetProgress(Course course)
+    {
+        if (course.Lessons.Count == 0)
+            return 0;
+
+        int completed = course.Lessons.Count(l => l.Completed);
+        return (completed * 100) / course.Lessons.Count;
+    }
+
+    void MarkCourseCompleted(Course course)
+    {
+        course.IsCompleted = true;
+        Storage.Save(allCourses);
+    }
+
+    void SaveAll()
+    {
+        Storage.Save(allCourses);
+    }
+
+    void GoToDetails(int id)
+    {
+        Nav.NavigateTo($"/course/{id}");
+    }
+
+    void ConfirmDelete(Course course)
+    {
+        courseToDelete = course;
+    }
+
+    void DeleteConfirmed()
+    {
+        allCourses.Remove(courseToDelete!);
+        courses.Remove(courseToDelete!);
+        Storage.Save(allCourses);
+        courseToDelete = null;
+    }
+
+    void CancelDelete()
+    {
+        courseToDelete = null;
+    }
+}

@@ -1,0 +1,44 @@
+﻿@page "/profile"
+
+@inject UserSession UserSession
+@inject NavigationManager Nav
+
+<h3 class="mb-4">
+    <i class="bi bi-person-circle me-2"></i>Profile
+</h3>
+
+@if (string.IsNullOrEmpty(UserSession.Email))
+{
+    <p class="text-danger">Please login first.</p>
+}
+else
+{
+    <div class="card shadow p-4 bg-light" style="max-width:500px;">
+
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input class="form-control"
+                   value="@UserSession.Email"
+                   disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input class="form-control"
+                   @bind="UserSession.Name"
+                   placeholder="Enter your name" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Bio</label>
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="UserSession.Bio"
+                      placeholder="Short bio"></textarea>
+        </div>
+
+        <button class="btn btn-primary">
+            <i class="bi bi-save me-1"></i> Save
+        </button>
+    </div>
+}

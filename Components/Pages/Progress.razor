@@ -1,0 +1,80 @@
+﻿@page "/progress"
+
+@using SimpleLearningDashboard.Models
+@using SimpleLearningDashboard.Services
+
+@inject CourseStorageService Storage
+@inject UserSession UserSession
+@inject NavigationManager Nav
+
+<h3 class="mb-4">
+    <i class="bi bi-bar-chart-line me-2"></i>Progress
+</h3>
+
+@if (string.IsNullOrEmpty(UserSession.Email))
+{
+    <p class="text-danger">Please log in to view progress.</p>
+}
+else
+{
+    <div class="card shadow p-4 bg-light mb-4">
+        <p>
+            Completed Courses:
+            <strong>@Completed / @Total</strong>
+        </p>
+
+        <div class="progress" style="height:20px;">
+            <div class="progress-bar bg-success"
+                 style="width:@ProgressPercent%">
+                @ProgressPercent%
+            </div>
+        </div>
+    </div>
+
+    <h5>Your Courses</h5>
+
+    @foreach (var course in courses)
+    {
+        <div class="card mb-2 p-3">
+            <div class="d-flex justify-content-between">
+                <span>@course.Name</span>
+
+                @if (course.IsCompleted)
+                {
+                    <span class="badge bg-success">Completed</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning text-dark">In Progress</span>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    List<Course> courses = new();
+
+    int Total;
+    int Completed;
+    int ProgressPercent;
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(UserSession.Email))
+        {
+            Nav.NavigateTo("/login", true);
+            return;
+        }
+
+        var allCourses = Storage.Load();
+
+        courses = allCourses
+            .Where(c => c.UserEmail == UserSession.Email)
+            .ToList();
+
+        Total = courses.Count;
+        Completed = courses.Count(c => c.IsCompleted);
+        ProgressPercent = Total == 0 ? 0 : (Completed * 100) / Total;
+    }
+}
